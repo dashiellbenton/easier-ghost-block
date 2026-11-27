@@ -1,11 +1,13 @@
 package dev.easierghostblock;
 
+import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import dev.easierghostblock.config.DelayUnit;
 import dev.easierghostblock.config.EGBConfig;
 import dev.easierghostblock.config.EGBConfigScreen;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -28,24 +30,24 @@ public class EasierGhostBlock implements ClientModInitializer {
             AckDelayQueue.onClientTick();
             if (openConfigNextTick) {
                 openConfigNextTick = false;
-                client.setScreen(EGBConfigScreen.create(client.screen));
+                client.setScreen(EGBConfigScreen.create(null));
             }
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> AckDelayQueue.clear());
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             for (String name : new String[]{"easierghostblock", "egb"}) {
-                dispatcher.register(ClientCommandManager.literal(name)
+                dispatcher.register(literal(name)
                         .executes(ctx -> {
                             // The chat screen closes after the command runs, so open on the next tick.
                             openConfigNextTick = true;
                             return 1;
                         })
-                        .then(ClientCommandManager.literal("status").executes(ctx -> {
+                        .then(literal("status").executes(ctx -> {
                             status(ctx.getSource());
                             return 1;
                         }))
-                        .then(ClientCommandManager.literal("toggle").executes(ctx -> {
+                        .then(literal("toggle").executes(ctx -> {
                             EGBConfig cfg = EGBConfig.get();
                             cfg.enabled = !cfg.enabled;
                             if (!cfg.enabled) AckDelayQueue.releaseAll();
@@ -53,8 +55,8 @@ public class EasierGhostBlock implements ClientModInitializer {
                             status(ctx.getSource());
                             return 1;
                         }))
-                        .then(ClientCommandManager.literal("ticks")
-                                .then(ClientCommandManager.argument("ticks", IntegerArgumentType.integer(0, EGBConfig.MAX_TICKS))
+                        .then(literal("ticks")
+                                .then(argument("ticks", IntegerArgumentType.integer(0, EGBConfig.MAX_TICKS))
                                         .executes(ctx -> {
                                             EGBConfig cfg = EGBConfig.get();
                                             cfg.unit = DelayUnit.TICKS;
@@ -63,8 +65,8 @@ public class EasierGhostBlock implements ClientModInitializer {
                                             status(ctx.getSource());
                                             return 1;
                                         })))
-                        .then(ClientCommandManager.literal("ms")
-                                .then(ClientCommandManager.argument("milliseconds", IntegerArgumentType.integer(0, EGBConfig.MAX_MILLISECONDS))
+                        .then(literal("ms")
+                                .then(argument("milliseconds", IntegerArgumentType.integer(0, EGBConfig.MAX_MILLISECONDS))
                                         .executes(ctx -> {
                                             EGBConfig cfg = EGBConfig.get();
                                             cfg.unit = DelayUnit.MILLISECONDS;
@@ -75,6 +77,15 @@ public class EasierGhostBlock implements ClientModInitializer {
                                         }))));
             }
         });
+    }
+
+    // Plain Brigadier builders: Fabric API renamed ClientCommandManager to ClientCommands in 26.x.
+    private static LiteralArgumentBuilder<FabricClientCommandSource> literal(String name) {
+        return LiteralArgumentBuilder.literal(name);
+    }
+
+    private static <T> RequiredArgumentBuilder<FabricClientCommandSource, T> argument(String name, ArgumentType<T> type) {
+        return RequiredArgumentBuilder.argument(name, type);
     }
 
     private static void status(FabricClientCommandSource source) {

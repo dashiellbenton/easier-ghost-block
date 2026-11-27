@@ -19,10 +19,10 @@ jobs:
       matrix:
         version: ['1.21.1', '1.21.3', '1.21.4', '1.21.5', '1.21.8', '1.21.10', '1.21.11', '26.1', '26.2', '26.3']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 21 and 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           # The last listed JDK becomes JAVA_HOME (Gradle runs on 25; 1.21.x compiles with the 21 toolchain).
@@ -31,13 +31,13 @@ jobs:
             25
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Build
-        run: ./gradlew ":${{ matrix.version }}:build" --stacktrace
+        run: ./gradlew -I gradle/ci/maven-mirror.gradle ":${{ matrix.version }}:build" --stacktrace
 
       - name: Upload jar
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: easier-ghost-block-${{ matrix.version }}
           path: dist/*.jar
@@ -48,13 +48,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: dist
           pattern: easier-ghost-block-*
           merge-multiple: true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: easier-ghost-block-all-versions
           path: dist/*.jar
