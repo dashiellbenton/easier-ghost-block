@@ -43,16 +43,32 @@ jobs:
           path: dist/*.jar
           if-no-files-found: error
 
-  bundle:
-    name: Bundle all jars
+  universal:
+    name: Universal jar (all versions)
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21 and 25
+        uses: actions/setup-java@v5
         with:
-          path: dist
-          pattern: easier-ghost-block-*
-          merge-multiple: true
+          distribution: temurin
+          java-version: |
+            21
+            25
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build every version + universal jar
+        run: ./gradlew -I gradle/ci/maven-mirror.gradle build universalJar --stacktrace
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: easier-ghost-block-universal
+          path: dist/*-universal.jar
+          if-no-files-found: error
 
       - uses: actions/upload-artifact@v5
         with:
