@@ -22,7 +22,11 @@ subprojects { sub ->
 
     sourceSets {
         main {
-            java.srcDirs = [rootProject.file('src/main/java')]
+            java.srcDirs = [
+                    rootProject.file('src/main/java'),
+                    // Small per-version shims for APIs that changed between versions.
+                    rootProject.file("src/compat/${props.screen_compat}/java"),
+            ]
             resources.srcDirs = [rootProject.file('src/main/resources')]
         }
     }
@@ -62,7 +66,6 @@ subprojects { sub ->
 
     java {
         toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
-        withSourcesJar()
     }
 
     tasks.withType(JavaCompile).configureEach {

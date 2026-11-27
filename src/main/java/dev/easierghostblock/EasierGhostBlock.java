@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import dev.easierghostblock.compat.ScreenHelper;
 import dev.easierghostblock.config.DelayUnit;
 import dev.easierghostblock.config.EGBConfig;
 import dev.easierghostblock.config.EGBConfigScreen;
@@ -30,7 +31,7 @@ public class EasierGhostBlock implements ClientModInitializer {
             AckDelayQueue.onClientTick();
             if (openConfigNextTick) {
                 openConfigNextTick = false;
-                client.setScreen(EGBConfigScreen.create(null));
+                ScreenHelper.open(EGBConfigScreen.create(null));
             }
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> AckDelayQueue.clear());
