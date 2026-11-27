@@ -1,0 +1,36 @@
+{
+  "easierghostblock.unit.ticks": "Ticks",
+  "easierghostblock.unit.milliseconds": "Milliseconds",
+
+  "easierghostblock.config.title": "Easier Ghost Block",
+  "easierghostblock.config.category.general": "General",
+
+  "easierghostblock.config.enabled": "Enabled",
+  "easierghostblock.config.enabled.desc": "Delay the server's confirmation of your block breaks and placements, so ghost blocks stay around for longer before they get corrected.",
+
+  "easierghostblock.config.unit": "Delay Unit",
+  "easierghostblock.config.unit.desc": "Choose whether the delay is measured in game ticks (1 tick = 50 ms) or in milliseconds. Only the value for the selected unit is used.",
+
+  "easierghostblock.config.group.delay": "Delay",
+  "easierghostblock.config.group.delay.desc": "How long to hold back the server's block correction. With 50 ms ping and 200 ms of extra delay, a ghost block lasts about 250 ms.",
+
+  "easierghostblock.config.delayTicks": "Delay (Ticks)",
+  "easierghostblock.config.delayTicks.desc": "Extra delay in client ticks, used when the unit is set to Ticks. 20 ticks = 1 second.",
+  "easierghostblock.config.delayTicksExact": "Delay (Ticks, exact)",
+  "easierghostblock.config.delayTicksExact.desc": "Same setting as the slider above, but lets you type any value up to 200 ticks.",
+
+  "easierghostblock.config.delayMilliseconds": "Delay (Milliseconds)",
+  "easierghostblock.config.delayMilliseconds.desc": "Extra delay in milliseconds, used when the unit is set to Milliseconds.",
+  "easierghostblock.config.delayMillisecondsExact": "Delay (Milliseconds, exact)",
+  "easierghostblock.config.delayMillisecondsExact.desc": "Same setting as the slider above, but lets you type any value up to 10000 ms.",
+
+  "easierghostblock.config.subtractPing": "Subtract Ping",
+  "easierghostblock.config.subtractPing.desc": "Treat the delay as a total target instead of an extra amount: your current ping is subtracted from it. For example 200 ms with 50 ms ping only adds 150 ms, so every server feels like 200 ms.",
+
+  "easierghostblock.config.group.where": "Where to Apply",
+  "easierghostblock.config.group.where.desc": "Choose where the delay is active.",
+  "easierghostblock.config.applyInSingleplayer": "Singleplayer",
+  "easierghostblock.config.applyInSingleplayer.desc": "Apply the delay in singleplayer worlds (and LAN worlds you host).",
+  "easierghostblock.config.applyInMultiplayer": "Multiplayer",
+  "easierghostblock.config.applyInMultiplayer.desc": "Apply the delay on multiplayer servers."
+}

@@ -1,0 +1,7 @@
+// Redirects Maven Central to Google's mirror. Used in CI because GitHub runners often get HTTP 429 from repo.maven.apache.org.
+def MIRROR = 'https://maven-central.storage-download.googleapis.com/maven2/'
+def fix = { repo ->
+    if (repo instanceof MavenArtifactRepository && repo.url.toString().startsWith('https://repo.maven.apache.org')) repo.url = MIRROR
+}
+settingsEvaluated { s -> s.pluginManagement.repositories.configureEach(fix) }
+allprojects { repositories.configureEach(fix); buildscript.repositories.configureEach(fix) }

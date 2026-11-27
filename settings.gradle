@@ -1,0 +1,27 @@
+pluginManagement {
+    repositories {
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+plugins {
+    // Lets Gradle download the Java 21 / 25 toolchains automatically if they are not installed.
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'easier-ghost-block'
+
+// One Gradle subproject per supported Minecraft version group.
+// Each reads its versions/<name>.properties file and compiles the shared ./src sources.
+file('versions').listFiles()
+        .findAll { it.name.endsWith('.properties') }
+        .collect { it.name - '.properties' }
+        .sort()
+        .each { String v ->
+            include(v)
+            def dir = file("build-versions/$v")
+            dir.mkdirs()
+            project(":$v").projectDir = dir
+        }

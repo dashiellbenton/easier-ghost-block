@@ -1,0 +1,67 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['1.21.1', '1.21.3', '1.21.4', '1.21.5', '1.21.8', '1.21.10', '1.21.11', '26.1', '26.2', '26.3']
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21 and 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          # The last listed JDK becomes JAVA_HOME (Gradle runs on 25; 1.21.x compiles with the 21 toolchain).
+          java-version: |
+            21
+            25
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build
+        run: ./gradlew -I gradle/ci/maven-mirror.gradle ":${{ matrix.version }}:build" --stacktrace
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v5
+        with:
+          name: easier-ghost-block-${{ matrix.version }}
+          path: dist/*.jar
+          if-no-files-found: error
+
+  bundle:
+    name: Bundle all jars
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist
+          pattern: easier-ghost-block-*
+          merge-multiple: true
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: easier-ghost-block-all-versions
+          path: dist/*.jar
+
+      - name: Publish GitHub release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.jar
+          generate_release_notes: true
