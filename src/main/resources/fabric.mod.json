@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "easierghostblock",
+  "version": "${version}",
+  "name": "Easier Ghost Block",
+  "description": "Delays the server's confirmation of your block breaks/places by a configurable amount of ticks or milliseconds, so ghost blocks are easy to make on low-ping servers and in singleplayer.",
+  "authors": ["dashiellbenton"],
+  "contact": {
+    "sources": "https://github.com/dashiellbenton/easier-ghost-block",
+    "issues": "https://github.com/dashiellbenton/easier-ghost-block/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/easierghostblock/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.easierghostblock.EasierGhostBlock"],
+    "modmenu": ["dev.easierghostblock.compat.ModMenuCompat"]
+  },
+  "mixins": ["easierghostblock.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "${mc_range}",
+    "java": ">=${java_version}",
+    "fabric-api": "*",
+    "yet_another_config_lib_v3": ">=3.6.0"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

@@ -1,0 +1,84 @@
+plugins {
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
+    id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+}
+
+subprojects { sub ->
+    def props = new Properties()
+    rootProject.file("versions/${sub.name}.properties").withInputStream { props.load(it) }
+    props.each { k, v -> sub.ext.set(k as String, v) }
+
+    def mcVersion = props.minecraft_version as String
+    // Minecraft 26.1+ ships unobfuscated, so it uses the non-remapping Loom plugin.
+    boolean obfuscated = mcVersion.startsWith('1.')
+    int javaVersion = (props.java_version as String).toInteger()
+
+    apply plugin: obfuscated ? 'net.fabricmc.fabric-loom-remap' : 'net.fabricmc.fabric-loom'
+    apply plugin: 'java'
+
+    version = "${rootProject.mod_version}+${sub.name}"
+    group = rootProject.maven_group
+    base { archivesName = rootProject.archives_base_name }
+
+    sourceSets {
+        main {
+            java.srcDirs = [rootProject.file('src/main/java')]
+            resources.srcDirs = [rootProject.file('src/main/resources')]
+        }
+    }
+
+    repositories {
+        maven { name = 'YACL'; url = 'https://maven.isxander.dev/releases' }
+        maven { name = 'Terraformers'; url = 'https://maven.terraformersmc.com/releases' }
+        mavenCentral()
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${mcVersion}"
+        if (obfuscated) {
+            mappings loom.officialMojangMappings()
+            modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+            modImplementation "net.fabricmc.fabric-api:fabric-api:${props.fabric_api_version}"
+            modImplementation("dev.isxander:yet-another-config-lib:${props.yacl_version}") { transitive = false }
+            modCompileOnly("com.terraformersmc:modmenu:${props.modmenu_version}") { transitive = false }
+        } else {
+            implementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+            implementation "net.fabricmc.fabric-api:fabric-api:${props.fabric_api_version}"
+            implementation("dev.isxander:yet-another-config-lib:${props.yacl_version}") { transitive = false }
+            compileOnly("com.terraformersmc:modmenu:${props.modmenu_version}") { transitive = false }
+        }
+    }
+
+    processResources {
+        def expandProps = [
+                version     : sub.version,
+                mc_range    : props.mc_range,
+                java_version: javaVersion,
+        ]
+        inputs.properties(expandProps)
+        filesMatching('fabric.mod.json') { expand(expandProps) }
+        filesMatching('easierghostblock.mixins.json') { expand(expandProps) }
+    }
+
+    java {
+        toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
+        withSourcesJar()
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = javaVersion
+    }
+
+    jar {
+        from(rootProject.file('LICENSE')) { rename { "${it}_${rootProject.archives_base_name}" } }
+    }
+
+    // Copy the final, distributable jar into <root>/dist for convenience.
+    def finalJar = obfuscated ? tasks.named('remapJar') : tasks.named('jar')
+    def collect = tasks.register('collectJar', Copy) {
+        from(finalJar)
+        into(rootProject.layout.projectDirectory.dir('dist'))
+    }
+    tasks.named('build') { finalizedBy(collect) }
+}
