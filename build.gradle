@@ -85,3 +85,93 @@ subprojects { sub ->
     }
     tasks.named('build') { finalizedBy(collect) }
 }
+
+// ---------------------------------------------------------------------------
+// Universal jar: one jar for every supported Minecraft version.
+//
+// Each per-version jar is nested (Jar-in-Jar) under a unique mod id. Fabric Loader
+// only loads nested mods "if possible", so exactly the one whose Minecraft range
+// matches the running game gets loaded; the others are silently skipped.
+// ---------------------------------------------------------------------------
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+def versionProjects = subprojects.toList().sort { it.name }
+def universalDir = layout.buildDirectory.dir('universal')
+
+def prepareNested = tasks.register('prepareUniversalNested') {
+    group = 'build'
+    description = 'Rewrites each per-version jar with a unique mod id for nesting.'
+    versionProjects.each { p ->
+        dependsOn("${p.path}:${p.name.startsWith('1.') ? 'remapJar' : 'jar'}")
+    }
+    def outDir = universalDir.map { it.dir('nested') }
+    outputs.dir(outDir)
+    inputs.property('version', mod_version)
+    doLast {
+        def dir = outDir.get().asFile
+        project.delete(dir)
+        dir.mkdirs()
+        versionProjects.each { p ->
+            def src = p.file("build/libs/${archives_base_name}-${p.version}.jar")
+            def implId = 'easierghostblock_mc' + p.name.replace('.', '_')
+            def dest = new File(dir, "${archives_base_name}-mc${p.name}.jar")
+            def tmp = new File(temporaryDir, p.name)
+            project.delete(tmp)
+            project.copy { from(project.zipTree(src)); into(tmp) }
+            def fmjFile = new File(tmp, 'fabric.mod.json')
+            def fmj = new JsonSlurper().parse(fmjFile)
+            fmj.id = implId
+            fmj.name = "Easier Ghost Block (Minecraft ${fmj.depends.minecraft})"
+            fmj.custom = [modmenu: [parent: 'easierghostblock', badges: ['library']]]
+            fmjFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(fmj))
+            project.ant.zip(destfile: dest, basedir: tmp)
+        }
+    }
+}
+
+tasks.register('universalJar', Jar) {
+    group = 'build'
+    description = 'Builds one jar that works on every supported Minecraft version.'
+    dependsOn(prepareNested)
+    archiveBaseName = archives_base_name
+    archiveVersion = mod_version
+    archiveClassifier = 'universal'
+    destinationDirectory = layout.projectDirectory.dir('dist')
+
+    def nestedDir = universalDir.map { it.dir('nested') }
+    from(nestedDir) { into('META-INF/jars') }
+    from('src/main/resources/assets/easierghostblock/icon.png') { into('assets/easierghostblock') }
+    from('LICENSE') { rename { "LICENSE_${archives_base_name}" } }
+
+    def generatedFmj = universalDir.map { it.file('fabric.mod.json') }
+    inputs.property('version', mod_version)
+    doFirst {
+        def nestedFiles = nestedDir.get().asFile.listFiles().findAll { it.name.endsWith('.jar') }.sort { it.name }
+        def fmj = [
+                schemaVersion: 1,
+                id           : 'easierghostblock',
+                version      : mod_version,
+                name         : 'Easier Ghost Block',
+                description  : 'Delays the server\'s confirmation of your block breaks/places by a configurable amount of ticks or milliseconds, so ghost blocks are easy to make on low-ping servers and in singleplayer. Universal jar for Minecraft 1.21 - 26.3.',
+                authors      : ['dashiellbenton'],
+                contact      : [sources: 'https://github.com/dashiellbenton/easier-ghost-block',
+                                issues : 'https://github.com/dashiellbenton/easier-ghost-block/issues'],
+                license      : 'MIT',
+                icon         : 'assets/easierghostblock/icon.png',
+                environment  : 'client',
+                jars         : nestedFiles.collect { [file: "META-INF/jars/${it.name}".toString()] },
+                depends      : [
+                        fabricloader              : '>=0.16.0',
+                        minecraft                 : '>=1.21 <26.4',
+                        'fabric-api'              : '*',
+                        yet_another_config_lib_v3 : '>=3.6.0',
+                ],
+                suggests     : [modmenu: '*'],
+        ]
+        def f = generatedFmj.get().asFile
+        f.parentFile.mkdirs()
+        f.text = JsonOutput.prettyPrint(JsonOutput.toJson(fmj))
+    }
+    from(generatedFmj)
+}

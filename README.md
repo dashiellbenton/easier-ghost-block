@@ -41,7 +41,9 @@ The config file is `config/easierghostblock.json`.
 
 ## Downloads / supported versions
 
-Each jar covers a range of Minecraft versions:
+**Easiest:** use `easier-ghost-block-<version>-universal.jar`. One jar works on every supported version, from 1.21 to 26.3.x. It contains every per-version build (Jar-in-Jar), and Fabric Loader only loads the one that matches your game.
+
+There are also per-version jars, and each one covers a range of Minecraft versions:
 
 | Jar | Minecraft |
 |---|---|
@@ -63,6 +65,7 @@ You need JDK 25 to run Gradle. JDK 21 is used for the 1.21.x targets, and Gradle
 ```bash
 ./gradlew build                 # all versions -> dist/
 ./gradlew :1.21.3:build         # a single version
+./gradlew build universalJar    # all versions + the universal jar -> dist/
 ```
 
 Every version is its own Gradle subproject, defined by `versions/<name>.properties`, and all of them compile the shared sources in `src/`. Everything uses Mojang's official names: 1.21.x is remapped with Loom, and 26.x is unobfuscated. To add a version, add a properties file.
